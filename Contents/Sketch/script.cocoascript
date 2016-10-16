@@ -1,0 +1,105 @@
+var onRun;
+(function () {
+  function drawLine (context, x1, y1, x2, y2, border) {
+    if (!border) {
+      return;
+    }
+
+    var document = context.document;
+    var path = NSBezierPath.bezierPath();
+    path.moveToPoint(NSMakePoint(x1, y1));
+    path.lineToPoint(NSMakePoint(x2, y2));
+    path.closePath();
+
+    var shape = MSShapeGroup.shapeWithBezierPath(path);
+    var newBorder = shape.style().borders().addNewStylePart();
+    newBorder.thickness = border.thickness();
+    newBorder.fillType = border.fillType();
+    newBorder.gradient = border.gradient();
+    if (newBorder.color()) {
+      newBorder.color = MSColor.colorWithSVGString(['#', border.color().hexValue()].join(''));
+    }
+
+    document.currentPage().addLayers([shape]);
+  }
+
+  onRun = function(context) {
+    context.document.hideMessage();
+
+    var documentName = context.document.displayName();
+    log('The current document is named: ' + documentName);
+
+    var selectedLayers = context.selection;
+    var selectedCount = selectedLayers.count();
+    if (selectedCount !== 2) {
+      context.document.showMessage('Two items must be selected.');
+      return;
+    }
+
+    var a = selectedLayers[0];
+    var b = selectedLayers[1];
+
+    var aFrame = a.frame();
+    var aMidX = aFrame.x() + aFrame.width() * 0.5;
+    var aMidY = aFrame.y() + aFrame.height() * 0.5;
+    var aPoints = a.bezierPathWithTransforms();;
+    var bFrame = b.frame();
+    var bMidX = bFrame.x() + bFrame.width() * 0.5;
+    var bMidY = bFrame.y() + bFrame.height() * 0.5;
+    var bPoints = b.bezierPathWithTransforms();
+    var midX = (bMidX + aMidX) * 0.5;
+    var midY = (bMidY + aMidY) * 0.5;
+    var midToAAngle = Math.atan2(midY - aMidY, midX - aMidX) - Math.PI;
+    var midToBAngle = Math.atan2(midY - bMidY, midX - bMidX) - Math.PI;
+
+    var magnitude = 1.0;
+    var maxTries = 10000;
+    var n = 0;
+    var dx;
+    var dy;
+    var aOutsideX;
+    var aOutsideY;
+    var bOutsideX;
+    var bOutsideY;
+    for(;; n++) {
+      dx = midX + Math.cos(midToAAngle) * (magnitude * n);
+      dy = midY + Math.sin(midToAAngle) * (magnitude * n);
+
+      if ([aPoints containsPoint:NSMakePoint(dx, dy)]) {
+        aOutsideX = dx;
+        aOutsideY = dy;
+        break;
+      }
+
+      if (n >= maxTries) {
+        log('Something went wrong `a`. Using The midpoint.');
+        aOutsideX = aMidX;
+        aOutsideY = aMidY;
+        break;
+      }
+    }
+
+
+    n = 0;
+    for(;; n++) {
+      dx = midX + Math.cos(midToBAngle) * (magnitude * n);
+      dy = midY + Math.sin(midToBAngle) * (magnitude * n);
+
+      if ([bPoints containsPoint:NSMakePoint(dx, dy)]) {
+        bOutsideX = dx;
+        bOutsideY = dy;
+        break;
+      }
+
+      if (n >= maxTries) {
+        log('Something went wrong `b`. Using The midpoint.');
+        aOutsideX = aMidX;
+        aOutsideY = aMidY;
+        break;
+      }
+    }
+
+    var border = a.style().borders().objectAtIndex(0) || b.style().borders().objectAtIndex(0);
+    drawLine(context, aOutsideX, aOutsideY, bOutsideX, bOutsideY, border);
+  };
+})();

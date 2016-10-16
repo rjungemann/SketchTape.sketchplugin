@@ -1,0 +1,23 @@
+{
+  "author" : "",
+  "commands" : [
+    {
+      "script" : "script.cocoascript",
+      "handler" : "onRun",
+      "shortcut" : "ctrl option shift c",
+      "name" : "Sketch Tape",
+      "identifier" : "sketch-tape"
+    }
+  ],
+  "menu" : {
+    "items" : [
+      "sketch-tape"
+    ],
+    "title" : "Sketch Tape"
+  },
+  "identifier" : "com.example.sketch.bed6e976-ac06-456f-9b14-43611ac133cf",
+  "version" : "1.0",
+  "description" : "",
+  "authorEmail" : "",
+  "name" : "SketchTape"
+}
